@@ -6,6 +6,7 @@ import { DashboardHeader } from "@/components/dashboard/header";
 import { SummaryCards } from "@/components/dashboard/summary-cards";
 import { ExpenseForm } from "@/components/dashboard/expense-form";
 import { ExpenseList } from "@/components/dashboard/expense-list";
+import { IncomeList } from "@/components/dashboard/income-list";
 import { MonthlyChart } from "@/components/dashboard/monthly-chart";
 import { ExpensePieChart } from "@/components/dashboard/expense-pie-chart";
 import { InvestmentCalculator } from "@/components/dashboard/investment-calculator";
@@ -15,10 +16,14 @@ import { Spinner } from "@/components/ui/spinner";
 export default function DashboardPage() {
   const {
     expenses,
+    incomes,
     isLoading,
     addExpense,
     removeExpense,
+    addIncome,
+    removeIncome,
     getExpensesForMonth,
+    getIncomesForMonth,
     getMonthlySummary,
     exportData,
     clearAll,
@@ -54,6 +59,16 @@ export default function DashboardPage() {
     [previousMonthExpenses]
   );
 
+  const currentMonthIncomes = useMemo(
+    () => getIncomesForMonth(currentMonth, currentYear),
+    [getIncomesForMonth, currentMonth, currentYear]
+  );
+
+  const currentMonthIncome = useMemo(
+    () => currentMonthIncomes.reduce((sum, i) => sum + i.value, 0),
+    [currentMonthIncomes]
+  );
+
   const yearTotal = useMemo(
     () => monthlySummary.reduce((sum, m) => sum + m.total, 0),
     [monthlySummary]
@@ -69,7 +84,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardHeader onExport={exportData} onClearAll={clearAll} />
+      <DashboardHeader onExport={exportData} onClearAll={clearAll} onAddIncome={addIncome} />
       
       <main className="container mx-auto px-4 py-6 space-y-6">
         <div className="flex items-center justify-between">
@@ -82,6 +97,7 @@ export default function DashboardPage() {
           previousMonthTotal={previousMonthTotal}
           yearTotal={yearTotal}
           expenseCount={expenses.length}
+          currentMonthIncome={currentMonthIncome}
         />
 
         <Tabs defaultValue="overview" className="space-y-4">
@@ -103,20 +119,40 @@ export default function DashboardPage() {
           </TabsContent>
 
           <TabsContent value="expenses" className="space-y-4">
-            <ExpenseList
-              expenses={currentMonthExpenses}
-              onRemove={removeExpense}
-              title="Despesas do Mês Atual"
-            />
-            {expenses.length > currentMonthExpenses.length && (
-              <ExpenseList
-                expenses={expenses.filter(
-                  (e) => !currentMonthExpenses.find((ce) => ce.id === e.id)
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="space-y-4">
+                <IncomeList
+                  incomes={currentMonthIncomes}
+                  onRemove={removeIncome}
+                  title="Entradas do Mês Atual"
+                />
+                {incomes.length > currentMonthIncomes.length && (
+                  <IncomeList
+                    incomes={incomes.filter(
+                      (i) => !currentMonthIncomes.find((ci) => ci.id === i.id)
+                    )}
+                    onRemove={removeIncome}
+                    title="Outras Entradas"
+                  />
                 )}
-                onRemove={removeExpense}
-                title="Outras Despesas"
-              />
-            )}
+              </div>
+              <div className="space-y-4">
+                <ExpenseList
+                  expenses={currentMonthExpenses}
+                  onRemove={removeExpense}
+                  title="Despesas do Mês Atual"
+                />
+                {expenses.length > currentMonthExpenses.length && (
+                  <ExpenseList
+                    expenses={expenses.filter(
+                      (e) => !currentMonthExpenses.find((ce) => ce.id === e.id)
+                    )}
+                    onRemove={removeExpense}
+                    title="Outras Despesas"
+                  />
+                )}
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="investment" className="space-y-4">

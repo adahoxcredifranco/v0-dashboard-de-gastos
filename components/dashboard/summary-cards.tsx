@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Wallet, Calendar } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet, Calendar, PiggyBank, ArrowDownUp } from "lucide-react";
 import { formatCurrency } from "@/lib/calculations";
 import { MONTHS_PT } from "@/lib/types";
 
@@ -10,6 +10,7 @@ interface SummaryCardsProps {
   previousMonthTotal: number;
   yearTotal: number;
   expenseCount: number;
+  currentMonthIncome: number;
 }
 
 export function SummaryCards({
@@ -17,6 +18,7 @@ export function SummaryCards({
   previousMonthTotal,
   yearTotal,
   expenseCount,
+  currentMonthIncome,
 }: SummaryCardsProps) {
   const now = new Date();
   const currentMonth = MONTHS_PT[now.getMonth()];
@@ -27,17 +29,49 @@ export function SummaryCards({
 
   const isIncrease = percentChange > 0;
 
+  // Saldo = Entradas - Despesas
+  const balance = currentMonthIncome - currentMonthTotal;
+  const isPositiveBalance = balance >= 0;
+
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Entradas em {currentMonth}</CardTitle>
+          <PiggyBank className="h-4 w-4 text-success" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-success">{formatCurrency(currentMonthIncome)}</div>
+          <p className="text-xs text-muted-foreground">
+            Total de rendimentos
+          </p>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Gastos em {currentMonth}</CardTitle>
-          <Wallet className="h-4 w-4 text-muted-foreground" />
+          <Wallet className="h-4 w-4 text-destructive" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{formatCurrency(currentMonthTotal)}</div>
+          <div className="text-2xl font-bold text-destructive">{formatCurrency(currentMonthTotal)}</div>
           <p className="text-xs text-muted-foreground">
-            Total de despesas no mês atual
+            Total de despesas
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card className={isPositiveBalance ? "border-success/50" : "border-destructive/50"}>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Saldo do Mês</CardTitle>
+          <ArrowDownUp className={`h-4 w-4 ${isPositiveBalance ? "text-success" : "text-destructive"}`} />
+        </CardHeader>
+        <CardContent>
+          <div className={`text-2xl font-bold ${isPositiveBalance ? "text-success" : "text-destructive"}`}>
+            {isPositiveBalance ? "+" : ""}{formatCurrency(balance)}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {isPositiveBalance ? "Vai sobrar no final do mês" : "Faltando para fechar o mês"}
           </p>
         </CardContent>
       </Card>

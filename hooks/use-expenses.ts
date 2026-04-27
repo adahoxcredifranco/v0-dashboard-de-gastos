@@ -1,18 +1,21 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Expense, ExpensePeriod, MonthSummary } from "@/lib/types";
+import { Expense, ExpensePeriod, MonthSummary, Income, IncomeType } from "@/lib/types";
 import { storageService } from "@/lib/storage";
 import { generateExportFilename } from "@/lib/calculations";
 
 export function useExpenses() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [incomes, setIncomes] = useState<Income[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Carregar dados ao montar
   useEffect(() => {
     const loadedExpenses = storageService.getAllExpenses();
+    const loadedIncomes = storageService.getAllIncomes();
     setExpenses(loadedExpenses);
+    setIncomes(loadedIncomes);
     setIsLoading(false);
   }, []);
 
@@ -43,6 +46,51 @@ export function useExpenses() {
     },
     []
   );
+
+  // ==================== INCOMES ====================
+
+  // Adicionar entrada
+  const addIncome = useCallback(
+    (income: { name: string; value: number; type: IncomeType; period: ExpensePeriod; month: number; year: number }) => {
+      const newIncome = storageService.addIncome(income);
+      setIncomes((prev) => [...prev, newIncome]);
+      return newIncome;
+    },
+    []
+  );
+
+  // Remover entrada
+  const removeIncome = useCallback((id: string) => {
+    storageService.removeIncome(id);
+    setIncomes((prev) => prev.filter((i) => i.id !== id));
+  }, []);
+
+  // Obter entradas do mês
+  const getIncomesForMonth = useCallback(
+    (month: number, year: number): Income[] => {
+      return incomes.filter((income) => {
+        if (income.period === ExpensePeriod.MONTH) {
+          return income.month === month && income.year === year;
+        }
+        if (income.period === ExpensePeriod.YEAR) {
+          return income.year === year && month >= income.month && month <= 12;
+        }
+        return false;
+      });
+    },
+    [incomes]
+  );
+
+  // Total de entradas do mês
+  const getMonthIncomeTotal = useCallback(
+    (month: number, year: number): number => {
+      const monthIncomes = getIncomesForMonth(month, year);
+      return monthIncomes.reduce((sum, i) => sum + i.value, 0);
+    },
+    [getIncomesForMonth]
+  );
+
+  // ==================== EXPENSES ====================
 
   // Obter despesas do mês
   const getExpensesForMonth = useCallback(
@@ -99,15 +147,21 @@ export function useExpenses() {
   const clearAll = useCallback(() => {
     storageService.clearAll();
     setExpenses([]);
+    setIncomes([]);
   }, []);
 
   return {
     expenses,
+    incomes,
     isLoading,
     addExpense,
     removeExpense,
     updateExpense,
+    addIncome,
+    removeIncome,
     getExpensesForMonth,
+    getIncomesForMonth,
+    getMonthIncomeTotal,
     getMonthlySummary,
     getCurrentMonthTotal,
     exportData,

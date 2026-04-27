@@ -1,4 +1,4 @@
-import { Expense, ExpensePeriod, StorageData, MonthSummary } from "./types";
+import { Expense, ExpensePeriod, StorageData, MonthSummary, Income } from "./types";
 
 const STORAGE_KEY = "expense-manager-data";
 const CURRENT_VERSION = "1.0.0";
@@ -7,19 +7,23 @@ const CURRENT_VERSION = "1.0.0";
 class StorageService {
   private getStorageData(): StorageData {
     if (typeof window === "undefined") {
-      return { expenses: [], version: CURRENT_VERSION };
+      return { expenses: [], incomes: [], version: CURRENT_VERSION };
     }
 
     const data = localStorage.getItem(STORAGE_KEY);
     if (!data) {
-      return { expenses: [], version: CURRENT_VERSION };
+      return { expenses: [], incomes: [], version: CURRENT_VERSION };
     }
 
     try {
       const parsed = JSON.parse(data) as StorageData;
+      // Garante compatibilidade com versões antigas sem incomes
+      if (!parsed.incomes) {
+        parsed.incomes = [];
+      }
       return parsed;
     } catch {
-      return { expenses: [], version: CURRENT_VERSION };
+      return { expenses: [], incomes: [], version: CURRENT_VERSION };
     }
   }
 
@@ -68,6 +72,55 @@ class StorageService {
     this.saveStorageData(data);
     return data.expenses[index];
   }
+
+  // ==================== INCOMES ====================
+
+  // Obter todas as entradas
+  getAllIncomes(): Income[] {
+    return this.getStorageData().incomes;
+  }
+
+  // Adicionar nova entrada
+  addIncome(income: Omit<Income, "id" | "createdAt">): Income {
+    const data = this.getStorageData();
+    const newIncome: Income = {
+      ...income,
+      id: this.generateId(),
+      createdAt: new Date().toISOString(),
+    };
+    data.incomes.push(newIncome);
+    this.saveStorageData(data);
+    return newIncome;
+  }
+
+  // Remover entrada
+  removeIncome(id: string): void {
+    const data = this.getStorageData();
+    data.incomes = data.incomes.filter((i) => i.id !== id);
+    this.saveStorageData(data);
+  }
+
+  // Obter entradas do mês (inclui entradas anuais vigentes)
+  getIncomesForMonth(month: number, year: number): Income[] {
+    const incomes = this.getAllIncomes();
+    return incomes.filter((income) => {
+      if (income.period === ExpensePeriod.MONTH) {
+        return income.month === month && income.year === year;
+      }
+      if (income.period === ExpensePeriod.YEAR) {
+        return income.year === year && month >= income.month && month <= 12;
+      }
+      return false;
+    });
+  }
+
+  // Obter total de entradas do mês
+  getMonthIncomeTotal(month: number, year: number): number {
+    const incomes = this.getIncomesForMonth(month, year);
+    return incomes.reduce((sum, i) => sum + i.value, 0);
+  }
+
+  // ==================== EXPENSES ====================
 
   // Obter despesas do mês atual (inclui gastos anuais vigentes)
   getExpensesForMonth(month: number, year: number): Expense[] {
@@ -119,6 +172,10 @@ class StorageService {
     try {
       const data = JSON.parse(jsonString) as StorageData;
       if (data.expenses && Array.isArray(data.expenses)) {
+        // Garante que incomes existe
+        if (!data.incomes) {
+          data.incomes = [];
+        }
         this.saveStorageData(data);
         return true;
       }

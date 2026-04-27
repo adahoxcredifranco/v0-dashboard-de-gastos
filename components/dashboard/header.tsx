@@ -13,13 +13,23 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { IncomeForm } from "./income-form";
+import { ExpensePeriod, IncomeType } from "@/lib/types";
 
 interface DashboardHeaderProps {
   onExport: () => void;
   onClearAll: () => void;
+  onAddIncome: (income: {
+    name: string;
+    value: number;
+    type: IncomeType;
+    period: ExpensePeriod;
+    month: number;
+    year: number;
+  }) => void;
 }
 
-export function DashboardHeader({ onExport, onClearAll }: DashboardHeaderProps) {
+export function DashboardHeader({ onExport, onClearAll, onAddIncome }: DashboardHeaderProps) {
   return (
     <header className="border-b bg-card">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -38,6 +48,8 @@ export function DashboardHeader({ onExport, onClearAll }: DashboardHeaderProps) 
             <Download className="mr-2 h-4 w-4" />
             Exportar JSON
           </Button>
+
+          <IncomeForm onSubmit={onAddIncome} />
           
           <AlertDialog>
             <AlertDialogTrigger asChild>
