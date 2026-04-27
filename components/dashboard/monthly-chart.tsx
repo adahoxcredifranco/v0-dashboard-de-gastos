@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { MonthSummary, MONTHS_PT } from "@/lib/types";
+import { MonthSummary, MONTHS_PT, Expense } from "@/lib/types";
 import { formatCurrency } from "@/lib/calculations";
+import { MonthDetailModal } from "./month-detail-modal";
 import {
   BarChart,
   Bar,
@@ -37,6 +38,12 @@ interface MonthlyChartProps {
 }
 
 export function MonthlyChart({ data, currentMonth }: MonthlyChartProps) {
+  const [selectedMonth, setSelectedMonth] = useState<{
+    month: number;
+    year: number;
+    expenses: Expense[];
+  } | null>(null);
+
   // Pega todas as despesas únicas de todos os meses
   const allExpenseNames = useMemo(() => {
     const names = new Set<string>();
@@ -75,16 +82,34 @@ export function MonthlyChart({ data, currentMonth }: MonthlyChartProps) {
     });
   }, [data]);
 
+  // Handler para clique no gráfico
+  const handleBarClick = (chartData: Record<string, unknown>) => {
+    const monthNumber = chartData.month as number;
+    const monthData = data.find((d) => d.month === monthNumber);
+    if (monthData) {
+      setSelectedMonth({
+        month: monthData.month,
+        year: monthData.year,
+        expenses: monthData.expenses,
+      });
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Gastos por Mês</CardTitle>
-        <CardDescription>Cada despesa com sua cor - {data[0]?.year}</CardDescription>
+        <CardDescription>Clique em uma barra para ver detalhes - {data[0]?.year}</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="h-[350px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+            <BarChart
+                data={chartData}
+                margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
+                onClick={(e) => e?.activePayload?.[0]?.payload && handleBarClick(e.activePayload[0].payload)}
+                style={{ cursor: "pointer" }}
+              >
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis
                 dataKey="name"
