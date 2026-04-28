@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Select,
   SelectContent,
@@ -15,25 +16,37 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
-import { ExpensePeriod, MONTHS_PT } from "@/lib/types";
+import { Expense, ExpensePeriod, MONTHS_PT } from "@/lib/types";
+
+type ExpensePayload = {
+  name: string;
+  value: number;
+  period: ExpensePeriod;
+  month: number;
+  year: number;
+};
 
 interface ExpenseFormProps {
-  onSubmit: (expense: {
-    name: string;
-    value: number;
-    period: ExpensePeriod;
-    month: number;
-    year: number;
-  }) => void;
+  onSubmit: (expense: ExpensePayload) => void;
+  editExpense?: Expense;
+  trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
-  const [open, setOpen] = useState(false);
+export function ExpenseForm({ onSubmit, editExpense, trigger, open: controlledOpen, onOpenChange }: ExpenseFormProps) {
+  const isEditMode = !!editExpense;
+  const [internalOpen, setInternalOpen] = useState(false);
+
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = onOpenChange ?? setInternalOpen;
+
   const [name, setName] = useState("");
   const [value, setValue] = useState("");
   const [period, setPeriod] = useState<ExpensePeriod>(ExpensePeriod.MONTH);
@@ -43,12 +56,27 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
   const currentYear = new Date().getFullYear();
   const years = [currentYear - 1, currentYear, currentYear + 1];
 
+  useEffect(() => {
+    if (open && editExpense) {
+      setName(editExpense.name);
+      setValue(editExpense.value.toString());
+      setPeriod(editExpense.period);
+      setMonth(editExpense.month.toString());
+      setYear(editExpense.year.toString());
+    }
+  }, [open, editExpense]);
+
+  const resetForm = () => {
+    setName("");
+    setValue("");
+    setPeriod(ExpensePeriod.MONTH);
+    setMonth((new Date().getMonth() + 1).toString());
+    setYear(new Date().getFullYear().toString());
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!name.trim() || !value || parseFloat(value) <= 0) {
-      return;
-    }
+    if (!name.trim() || !value || parseFloat(value) <= 0) return;
 
     onSubmit({
       name: name.trim(),
@@ -58,28 +86,27 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
       year: parseInt(year),
     });
 
-    // Reset form
-    setName("");
-    setValue("");
-    setPeriod(ExpensePeriod.MONTH);
-    setMonth((new Date().getMonth() + 1).toString());
-    setYear(new Date().getFullYear().toString());
+    if (!isEditMode) resetForm();
     setOpen(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o && !isEditMode) resetForm(); }}>
       <DialogTrigger asChild>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Nova Despesa
-        </Button>
+        {trigger ?? (
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            Nova Despesa
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Adicionar Despesa</DialogTitle>
+          <DialogTitle>{isEditMode ? "Editar Despesa" : "Adicionar Despesa"}</DialogTitle>
           <DialogDescription>
-            Cadastre uma nova despesa. Escolha se é um gasto mensal ou anual.
+            {isEditMode
+              ? "Altere os dados da despesa e salve."
+              : "Cadastre uma nova despesa. Escolha se é um gasto mensal ou anual."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="grid gap-4 py-4">
@@ -109,20 +136,20 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="period">Período</Label>
-            <Select value={period} onValueChange={(v) => setPeriod(v as ExpensePeriod)}>
-              <SelectTrigger id="period">
-                <SelectValue placeholder="Selecione o período" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ExpensePeriod.MONTH}>
-                  Mensal (apenas este mês)
-                </SelectItem>
-                <SelectItem value={ExpensePeriod.YEAR}>
-                  Anual (até dezembro)
-                </SelectItem>
-              </SelectContent>
-            </Select>
+            <Label>Período</Label>
+            <ToggleGroup
+              type="single"
+              value={period}
+              onValueChange={(v) => { if (v) setPeriod(v as ExpensePeriod); }}
+              className="grid grid-cols-2"
+            >
+              <ToggleGroupItem value={ExpensePeriod.MONTH} className="w-full">
+                Mensal
+              </ToggleGroupItem>
+              <ToggleGroupItem value={ExpensePeriod.YEAR} className="w-full">
+                Anual
+              </ToggleGroupItem>
+            </ToggleGroup>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -159,9 +186,14 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
             </div>
           </div>
 
-          <Button type="submit" className="mt-4">
-            Adicionar Despesa
-          </Button>
+          <DialogFooter className="mt-2">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit">
+              {isEditMode ? "Salvar Alterações" : "Adicionar Despesa"}
+            </Button>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

@@ -100,6 +100,16 @@ class StorageService {
     this.saveStorageData(data);
   }
 
+  // Atualizar entrada
+  updateIncome(id: string, updates: Partial<Omit<Income, "id" | "createdAt">>): Income | null {
+    const data = this.getStorageData();
+    const index = data.incomes.findIndex((i) => i.id === id);
+    if (index === -1) return null;
+    data.incomes[index] = { ...data.incomes[index], ...updates };
+    this.saveStorageData(data);
+    return data.incomes[index];
+  }
+
   // Obter entradas do mês (inclui entradas anuais vigentes)
   getIncomesForMonth(month: number, year: number): Income[] {
     const incomes = this.getAllIncomes();

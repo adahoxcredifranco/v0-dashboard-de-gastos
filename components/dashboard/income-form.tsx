@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,21 +21,35 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PlusCircle } from "lucide-react";
-import { ExpensePeriod, IncomeType, INCOME_TYPE_LABELS, MONTHS_PT } from "@/lib/types";
+import { ExpensePeriod, Income, IncomeType, INCOME_TYPE_LABELS, MONTHS_PT } from "@/lib/types";
+
+type IncomePayload = {
+  name: string;
+  value: number;
+  type: IncomeType;
+  period: ExpensePeriod;
+  month: number;
+  year: number;
+};
 
 interface IncomeFormProps {
-  onSubmit: (income: {
-    name: string;
-    value: number;
-    type: IncomeType;
-    period: ExpensePeriod;
-    month: number;
-    year: number;
-  }) => void;
+  onSubmit: (income: IncomePayload) => void;
+  /** When provided, renders an edit trigger instead of "Nova Entrada" */
+  editIncome?: Income;
+  /** Custom trigger element for edit mode */
+  trigger?: React.ReactNode;
+  /** Controlled open state (for edit mode) */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function IncomeForm({ onSubmit }: IncomeFormProps) {
-  const [open, setOpen] = useState(false);
+export function IncomeForm({ onSubmit, editIncome, trigger, open: controlledOpen, onOpenChange }: IncomeFormProps) {
+  const isEditMode = !!editIncome;
+  const [internalOpen, setInternalOpen] = useState(false);
+
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = onOpenChange ?? setInternalOpen;
+
   const [name, setName] = useState("");
   const [value, setValue] = useState("");
   const [type, setType] = useState<IncomeType>(IncomeType.SALARY);
@@ -43,27 +57,34 @@ export function IncomeForm({ onSubmit }: IncomeFormProps) {
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [year, setYear] = useState(new Date().getFullYear());
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  // Populate fields when editing
+  useEffect(() => {
+    if (open && editIncome) {
+      setName(editIncome.name);
+      setValue(editIncome.value.toString());
+      setType(editIncome.type);
+      setPeriod(editIncome.period);
+      setMonth(editIncome.month);
+      setYear(editIncome.year);
+    }
+  }, [open, editIncome]);
 
-    if (!name.trim() || !value) return;
-
-    onSubmit({
-      name: name.trim(),
-      value: parseFloat(value),
-      type,
-      period,
-      month,
-      year,
-    });
-
-    // Reset form
+  const resetForm = () => {
     setName("");
     setValue("");
     setType(IncomeType.SALARY);
     setPeriod(ExpensePeriod.MONTH);
     setMonth(new Date().getMonth() + 1);
     setYear(new Date().getFullYear());
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || !value) return;
+
+    onSubmit({ name: name.trim(), value: parseFloat(value), type, period, month, year });
+
+    if (!isEditMode) resetForm();
     setOpen(false);
   };
 
@@ -71,19 +92,23 @@ export function IncomeForm({ onSubmit }: IncomeFormProps) {
   const years = [currentYear - 1, currentYear, currentYear + 1];
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o && !isEditMode) resetForm(); }}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="border-success text-success hover:bg-success hover:text-success-foreground">
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Nova Entrada
-        </Button>
+        {trigger ?? (
+          <Button variant="outline" className="border-success text-success hover:bg-success hover:text-success-foreground">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Nova Entrada
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Cadastrar Entrada</DialogTitle>
+            <DialogTitle>{isEditMode ? "Editar Entrada" : "Cadastrar Entrada"}</DialogTitle>
             <DialogDescription>
-              Adicione uma nova fonte de renda como salário ou investimento.
+              {isEditMode
+                ? "Altere os dados da entrada e salve."
+                : "Adicione uma nova fonte de renda como salário ou investimento."}
             </DialogDescription>
           </DialogHeader>
 
@@ -182,7 +207,7 @@ export function IncomeForm({ onSubmit }: IncomeFormProps) {
               Cancelar
             </Button>
             <Button type="submit" className="bg-success hover:bg-success/90 text-success-foreground">
-              Adicionar Entrada
+              {isEditMode ? "Salvar Alterações" : "Adicionar Entrada"}
             </Button>
           </DialogFooter>
         </form>

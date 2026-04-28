@@ -1,8 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Trash2, PiggyBank } from "lucide-react";
+import { Trash2, PiggyBank, Pencil } from "lucide-react";
 import { Income, INCOME_TYPE_LABELS, MONTHS_PT, ExpensePeriod } from "@/lib/types";
 import { formatCurrency } from "@/lib/calculations";
 import {
@@ -17,14 +18,17 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { IncomeForm } from "./income-form";
 
 interface IncomeListProps {
   incomes: Income[];
   onRemove: (id: string) => void;
+  onUpdate: (id: string, updates: Partial<Omit<Income, "id" | "createdAt">>) => void;
   title?: string;
 }
 
-export function IncomeList({ incomes, onRemove, title = "Entradas" }: IncomeListProps) {
+export function IncomeList({ incomes, onRemove, onUpdate, title = "Entradas" }: IncomeListProps) {
+  const [editingId, setEditingId] = useState<string | null>(null);
   const total = incomes.reduce((sum, i) => sum + i.value, 0);
 
   if (incomes.length === 0) {
@@ -88,6 +92,25 @@ export function IncomeList({ incomes, onRemove, title = "Entradas" }: IncomeList
               </div>
               <div className="flex items-center gap-3">
                 <span className="font-bold text-success">{formatCurrency(income.value)}</span>
+
+                {/* Edit */}
+                <IncomeForm
+                  editIncome={income}
+                  open={editingId === income.id}
+                  onOpenChange={(o) => setEditingId(o ? income.id : null)}
+                  trigger={
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
+                      <Pencil className="h-4 w-4" />
+                      <span className="sr-only">Editar entrada</span>
+                    </Button>
+                  }
+                  onSubmit={(data) => {
+                    onUpdate(income.id, data);
+                    setEditingId(null);
+                  }}
+                />
+
+                {/* Delete */}
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">

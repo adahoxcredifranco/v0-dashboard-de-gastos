@@ -12,12 +12,18 @@ interface ExpensePieChartProps {
 }
 
 const COLORS = [
-  "hsl(var(--chart-1))",
-  "hsl(var(--chart-2))",
-  "hsl(var(--chart-3))",
-  "hsl(var(--chart-4))",
-  "hsl(var(--chart-5))",
-  "hsl(var(--primary))",
+  "#3b82f6", // blue
+  "#f97316", // orange
+  "#22c55e", // green
+  "#a855f7", // purple
+  "#ef4444", // red
+  "#eab308", // yellow
+  "#06b6d4", // cyan
+  "#ec4899", // pink
+  "#14b8a6", // teal
+  "#f59e0b", // amber
+  "#6366f1", // indigo
+  "#84cc16", // lime
 ];
 
 export function ExpensePieChart({ expenses, month, year }: ExpensePieChartProps) {

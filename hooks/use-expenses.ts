@@ -65,6 +65,18 @@ export function useExpenses() {
     setIncomes((prev) => prev.filter((i) => i.id !== id));
   }, []);
 
+  // Atualizar entrada
+  const updateIncome = useCallback(
+    (id: string, updates: Partial<Omit<Income, "id" | "createdAt">>) => {
+      const updated = storageService.updateIncome(id, updates);
+      if (updated) {
+        setIncomes((prev) => prev.map((i) => (i.id === id ? updated : i)));
+      }
+      return updated;
+    },
+    []
+  );
+
   // Obter entradas do mês
   const getIncomesForMonth = useCallback(
     (month: number, year: number): Income[] => {
@@ -159,6 +171,7 @@ export function useExpenses() {
     updateExpense,
     addIncome,
     removeIncome,
+    updateIncome,
     getExpensesForMonth,
     getIncomesForMonth,
     getMonthIncomeTotal,

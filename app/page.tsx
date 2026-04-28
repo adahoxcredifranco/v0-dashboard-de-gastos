@@ -20,8 +20,10 @@ export default function DashboardPage() {
     isLoading,
     addExpense,
     removeExpense,
+    updateExpense,
     addIncome,
     removeIncome,
+    updateIncome,
     getExpensesForMonth,
     getIncomesForMonth,
     getMonthlySummary,
@@ -124,6 +126,7 @@ export default function DashboardPage() {
                 <IncomeList
                   incomes={currentMonthIncomes}
                   onRemove={removeIncome}
+                  onUpdate={updateIncome}
                   title="Entradas do Mês Atual"
                 />
                 {incomes.length > currentMonthIncomes.length && (
@@ -132,6 +135,7 @@ export default function DashboardPage() {
                       (i) => !currentMonthIncomes.find((ci) => ci.id === i.id)
                     )}
                     onRemove={removeIncome}
+                    onUpdate={updateIncome}
                     title="Outras Entradas"
                   />
                 )}
@@ -140,6 +144,7 @@ export default function DashboardPage() {
                 <ExpenseList
                   expenses={currentMonthExpenses}
                   onRemove={removeExpense}
+                  onUpdate={updateExpense}
                   title="Despesas do Mês Atual"
                 />
                 {expenses.length > currentMonthExpenses.length && (
@@ -148,6 +153,7 @@ export default function DashboardPage() {
                       (e) => !currentMonthExpenses.find((ce) => ce.id === e.id)
                     )}
                     onRemove={removeExpense}
+                    onUpdate={updateExpense}
                     title="Outras Despesas"
                   />
                 )}
