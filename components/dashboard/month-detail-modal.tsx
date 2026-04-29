@@ -76,8 +76,8 @@ export function MonthDetailModal({
   );
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-3xl max-h-[90vh]">
+    <Dialog  open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="!max-w-4xl w-[90vw] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
@@ -103,7 +103,7 @@ export function MonthDetailModal({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-[250px]">
+                <div className="h-80">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
@@ -162,7 +162,7 @@ export function MonthDetailModal({
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                <ScrollArea className="h-[250px] px-4">
+                <ScrollArea className="h-80 px-4">
                   <div className="space-y-2 pb-4">
                     {sortedExpenses.map((expense, index) => {
                       const percentage =
@@ -176,7 +176,7 @@ export function MonthDetailModal({
                         >
                           <div className="flex items-center gap-3">
                             <span
-                              className="h-3 w-3 rounded-full flex-shrink-0"
+                              className="h-3 w-3 rounded-full shrink-0"
                               style={{
                                 backgroundColor:
                                   PIE_COLORS[
@@ -226,7 +226,7 @@ export function MonthDetailModal({
                     className="flex items-center gap-2 p-2 rounded-lg bg-muted/50"
                   >
                     <span
-                      className="h-3 w-3 rounded-full flex-shrink-0"
+                      className="h-3 w-3 rounded-full shrink-0"
                       style={{
                         backgroundColor: PIE_COLORS[index % PIE_COLORS.length],
                       }}

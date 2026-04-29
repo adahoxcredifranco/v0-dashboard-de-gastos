@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { PlusCircle } from "lucide-react";
 import { ExpensePeriod, Income, IncomeType, INCOME_TYPE_LABELS, MONTHS_PT } from "@/lib/types";
 
@@ -155,16 +156,20 @@ export function IncomeForm({ onSubmit, editIncome, trigger, open: controlledOpen
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="income-period">Período</Label>
-              <Select value={period} onValueChange={(v) => setPeriod(v as ExpensePeriod)}>
-                <SelectTrigger id="income-period">
-                  <SelectValue placeholder="Selecione o período" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={ExpensePeriod.MONTH}>Mensal (somente este mês)</SelectItem>
-                  <SelectItem value={ExpensePeriod.YEAR}>Anual (até dezembro)</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>Período</Label>
+              <ToggleGroup
+                type="single"
+                value={period}
+                onValueChange={(v) => { if (v) setPeriod(v as ExpensePeriod); }}
+                className="grid grid-cols-2"
+              >
+                <ToggleGroupItem value={ExpensePeriod.MONTH} className="w-full">
+                  Mensal
+                </ToggleGroupItem>
+                <ToggleGroupItem value={ExpensePeriod.YEAR} className="w-full">
+                  Anual
+                </ToggleGroupItem>
+              </ToggleGroup>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

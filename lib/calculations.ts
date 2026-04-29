@@ -2,28 +2,29 @@ import { InvestmentCalculation, InvestmentResult } from "./types";
 
 // Calculadora de investimento com juros compostos
 export function calculateInvestment(params: InvestmentCalculation): InvestmentResult[] {
-  const { initialValue, months, interestRate } = params;
+  const { initialValue, months, interestRate, monthlyContribution = 0 } = params;
   const results: InvestmentResult[] = [];
-  
+
   let currentValue = initialValue;
   const monthlyRate = interestRate / 100;
+  // Total aportado (inicial + aportes recorrentes)
+  let totalContributed = initialValue;
 
-  for (let month = 0; month <= months; month++) {
-    if (month === 0) {
-      results.push({
-        month: 0,
-        value: initialValue,
-        earnings: 0,
-      });
-    } else {
-      const earnings = currentValue * monthlyRate;
-      currentValue = currentValue + earnings;
-      results.push({
-        month,
-        value: currentValue,
-        earnings: currentValue - initialValue,
-      });
+  results.push({ month: 0, value: initialValue, earnings: 0 });
+
+  for (let month = 1; month <= months; month++) {
+    // Juros sobre o saldo atual
+    currentValue = currentValue * (1 + monthlyRate);
+    // Aporte recorrente entra após os juros do mês
+    if (monthlyContribution > 0) {
+      currentValue += monthlyContribution;
+      totalContributed += monthlyContribution;
     }
+    results.push({
+      month,
+      value: currentValue,
+      earnings: currentValue - totalContributed,
+    });
   }
 
   return results;

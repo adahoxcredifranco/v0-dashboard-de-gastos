@@ -38,10 +38,14 @@ interface ExpenseFormProps {
   trigger?: React.ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /** Pré-define e trava o mês/ano (usado ao adicionar pelo gráfico) */
+  defaultMonth?: number;
+  defaultYear?: number;
 }
 
-export function ExpenseForm({ onSubmit, editExpense, trigger, open: controlledOpen, onOpenChange }: ExpenseFormProps) {
+export function ExpenseForm({ onSubmit, editExpense, trigger, open: controlledOpen, onOpenChange, defaultMonth, defaultYear }: ExpenseFormProps) {
   const isEditMode = !!editExpense;
+  const isLockedMonth = defaultMonth !== undefined && defaultYear !== undefined;
   const [internalOpen, setInternalOpen] = useState(false);
 
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
@@ -50,8 +54,8 @@ export function ExpenseForm({ onSubmit, editExpense, trigger, open: controlledOp
   const [name, setName] = useState("");
   const [value, setValue] = useState("");
   const [period, setPeriod] = useState<ExpensePeriod>(ExpensePeriod.MONTH);
-  const [month, setMonth] = useState((new Date().getMonth() + 1).toString());
-  const [year, setYear] = useState(new Date().getFullYear().toString());
+  const [month, setMonth] = useState((defaultMonth ?? new Date().getMonth() + 1).toString());
+  const [year, setYear] = useState((defaultYear ?? new Date().getFullYear()).toString());
 
   const currentYear = new Date().getFullYear();
   const years = [currentYear - 1, currentYear, currentYear + 1];
@@ -63,6 +67,9 @@ export function ExpenseForm({ onSubmit, editExpense, trigger, open: controlledOp
       setPeriod(editExpense.period);
       setMonth(editExpense.month.toString());
       setYear(editExpense.year.toString());
+    } else if (open && isLockedMonth) {
+      setMonth(defaultMonth!.toString());
+      setYear(defaultYear!.toString());
     }
   }, [open, editExpense]);
 
@@ -70,8 +77,8 @@ export function ExpenseForm({ onSubmit, editExpense, trigger, open: controlledOp
     setName("");
     setValue("");
     setPeriod(ExpensePeriod.MONTH);
-    setMonth((new Date().getMonth() + 1).toString());
-    setYear(new Date().getFullYear().toString());
+    setMonth((defaultMonth ?? new Date().getMonth() + 1).toString());
+    setYear((defaultYear ?? new Date().getFullYear()).toString());
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -155,7 +162,7 @@ export function ExpenseForm({ onSubmit, editExpense, trigger, open: controlledOp
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="month">Mês</Label>
-              <Select value={month} onValueChange={setMonth}>
+              <Select value={month} onValueChange={setMonth} disabled={isLockedMonth}>
                 <SelectTrigger id="month">
                   <SelectValue placeholder="Mês" />
                 </SelectTrigger>
@@ -171,7 +178,7 @@ export function ExpenseForm({ onSubmit, editExpense, trigger, open: controlledOp
 
             <div className="grid gap-2">
               <Label htmlFor="year">Ano</Label>
-              <Select value={year} onValueChange={setYear}>
+              <Select value={year} onValueChange={setYear} disabled={isLockedMonth}>
                 <SelectTrigger id="year">
                   <SelectValue placeholder="Ano" />
                 </SelectTrigger>

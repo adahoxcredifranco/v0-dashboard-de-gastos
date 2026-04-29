@@ -10,6 +10,7 @@ import { IncomeList } from "@/components/dashboard/income-list";
 import { MonthlyChart } from "@/components/dashboard/monthly-chart";
 import { ExpensePieChart } from "@/components/dashboard/expense-pie-chart";
 import { InvestmentCalculator } from "@/components/dashboard/investment-calculator";
+import { NationalIndicators } from "@/components/dashboard/national-indicators";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -107,11 +108,12 @@ export default function DashboardPage() {
             <TabsTrigger value="overview">Visão Geral</TabsTrigger>
             <TabsTrigger value="expenses">Despesas</TabsTrigger>
             <TabsTrigger value="investment">Investimentos</TabsTrigger>
+            <TabsTrigger value="national">Nacional</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
-              <MonthlyChart data={monthlySummary} currentMonth={currentMonth} />
+              <MonthlyChart data={monthlySummary} currentMonth={currentMonth} onAddExpense={addExpense} />
               <ExpensePieChart
                 expenses={currentMonthExpenses}
                 month={currentMonth}
@@ -163,6 +165,10 @@ export default function DashboardPage() {
 
           <TabsContent value="investment" className="space-y-4">
             <InvestmentCalculator />
+          </TabsContent>
+
+          <TabsContent value="national" className="space-y-4">
+            <NationalIndicators />
           </TabsContent>
         </Tabs>
       </main>

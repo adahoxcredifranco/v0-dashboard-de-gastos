@@ -54,6 +54,7 @@ export interface InvestmentCalculation {
   initialValue: number;
   months: number;
   interestRate: number; // porcentagem mensal
+  monthlyContribution?: number; // aporte mensal recorrente
 }
 
 export interface InvestmentResult {
