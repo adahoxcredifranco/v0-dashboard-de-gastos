@@ -94,7 +94,7 @@ export function QrScanner({ open, onOpenChange, onExpenseScanned }: QrScannerPro
     if (code?.data) {
       // Fluxo principal: ao ler, já abre a modal de despesa preenchida
       const parsed = parseExpenseQr(code.data);
-      onExpenseScanned?.(parsed ?? { name: code.data });
+      onExpenseScanned?.(parsed ?? { name: "PIX" });
       onOpenChange(false);
       setResult(code.data);
       stopCamera();
@@ -157,6 +157,36 @@ export function QrScanner({ open, onOpenChange, onExpenseScanned }: QrScannerPro
       return undefined;
     };
 
+    // PIX "BR Code" (EMVCo) vem em TLV: ID(2) + LEN(2) + VALUE(LEN)
+    const parsePixBrCode = (payload: string): QrExpenseData | null => {
+      const s = payload.trim();
+      if (s.length < 8) return null;
+
+      // aceita BR Code típico (começa com 00 02 01)
+      if (!s.startsWith("000201") && !s.includes("BR.GOV.BCB.PIX")) return null;
+
+      const tlv = new Map<string, string>();
+      let i = 0;
+      while (i + 4 <= s.length) {
+        const id = s.slice(i, i + 2);
+        const lenStr = s.slice(i + 2, i + 4);
+        const len = Number(lenStr);
+        if (!Number.isFinite(len) || len < 0) break;
+        const start = i + 4;
+        const end = start + len;
+        if (end > s.length) break;
+        tlv.set(id, s.slice(start, end));
+        i = end;
+      }
+
+      const name = tlv.get("59")?.trim(); // Merchant Name
+      const amountRaw = tlv.get("54")?.trim(); // Transaction Amount
+      const value = amountRaw ? parseNumber(amountRaw) : undefined;
+
+      if (!name && value === undefined) return null;
+      return { name, value, period: ExpensePeriod.MONTH };
+    };
+
     try {
       const parsed = JSON.parse(raw) as unknown;
       if (typeof parsed === "object" && parsed !== null) {
@@ -185,7 +215,9 @@ export function QrScanner({ open, onOpenChange, onExpenseScanned }: QrScannerPro
     } catch {
       // não é JSON — ignora
     }
-    return null;
+
+    // fallback: tenta PIX BR Code
+    return parsePixBrCode(raw);
   };
 
   const handleCopy = async () => {
