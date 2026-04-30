@@ -77,7 +77,7 @@ export function ExpenseForm({ onSubmit, editExpense, trigger, open: controlledOp
       setMonth(defaultMonth!.toString());
       setYear(defaultYear!.toString());
     }
-  }, [open, editExpense]);
+  }, [open, editExpense, defaultValues, isLockedMonth, defaultMonth, defaultYear]);
 
   const resetForm = () => {
     setName(defaultValues?.name ?? "");

@@ -122,14 +122,61 @@ export function QrScanner({ open, onOpenChange, onExpenseScanned }: QrScannerPro
 
   // Tenta parsear o QR como dados de despesa (JSON)
   const parseExpenseQr = (raw: string): QrExpenseData | null => {
+    const parseNumber = (v: unknown): number | undefined => {
+      if (typeof v === "number" && Number.isFinite(v)) return v;
+      if (typeof v === "string") {
+        const cleaned = v
+          .trim()
+          .replace(/\s/g, "")
+          .replace(/[R$r$]/gi, "")
+          .replace(/\./g, "")
+          .replace(",", ".");
+        const n = Number(cleaned);
+        if (Number.isFinite(n)) return n;
+      }
+      return undefined;
+    };
+
+    const pickFirstString = (obj: Record<string, unknown>, keys: string[]): string | undefined => {
+      for (const k of keys) {
+        const v = obj[k];
+        if (typeof v === "string" && v.trim()) return v.trim();
+      }
+      return undefined;
+    };
+
+    const pickFirstNumber = (obj: Record<string, unknown>, keys: string[]): number | undefined => {
+      for (const k of keys) {
+        const n = parseNumber(obj[k]);
+        if (n !== undefined) return n;
+      }
+      return undefined;
+    };
+
     try {
-      const parsed = JSON.parse(raw);
-      if (typeof parsed === "object" && parsed !== null && ("name" in parsed || "value" in parsed)) {
+      const parsed = JSON.parse(raw) as unknown;
+      if (typeof parsed === "object" && parsed !== null) {
+        const obj = parsed as Record<string, unknown>;
+        const name = pickFirstString(obj, [
+          "name",
+          "empresa",
+          "company",
+          "merchant",
+          "merchantName",
+          "nome",
+          "descricao",
+          "description",
+          "title",
+        ]);
+        const value = pickFirstNumber(obj, ["value", "valor", "amount", "total", "price", "preco"]);
+
+        if (name !== undefined || value !== undefined) {
         return {
-          name: typeof parsed.name === "string" ? parsed.name : undefined,
-          value: typeof parsed.value === "number" ? parsed.value : undefined,
-          period: parsed.period === "YEAR" ? ExpensePeriod.YEAR : ExpensePeriod.MONTH,
+          name,
+          value,
+          period: obj.period === "YEAR" ? ExpensePeriod.YEAR : ExpensePeriod.MONTH,
         };
+        }
       }
     } catch {
       // não é JSON — ignora
