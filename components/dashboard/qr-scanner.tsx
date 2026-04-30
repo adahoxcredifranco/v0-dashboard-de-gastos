@@ -92,13 +92,17 @@ export function QrScanner({ open, onOpenChange, onExpenseScanned }: QrScannerPro
     });
 
     if (code?.data) {
+      // Fluxo principal: ao ler, já abre a modal de despesa preenchida
+      const parsed = parseExpenseQr(code.data);
+      onExpenseScanned?.(parsed ?? { name: code.data });
+      onOpenChange(false);
       setResult(code.data);
       stopCamera();
       return;
     }
 
     rafRef.current = requestAnimationFrame(scanFrame);
-  }, [stopCamera]);
+  }, [stopCamera, onExpenseScanned, onOpenChange]);
 
   // Abre/fecha câmera com o dialog
   useEffect(() => {
@@ -207,8 +211,8 @@ export function QrScanner({ open, onOpenChange, onExpenseScanned }: QrScannerPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md p-0 overflow-hidden gap-0">
-        <DialogHeader className="px-4 pt-4 pb-2">
+      <DialogContent className="p-0 overflow-hidden gap-0 w-screen h-dvh max-w-none rounded-none border-0 sm:w-full sm:h-auto sm:max-w-md sm:rounded-lg sm:border">
+        <DialogHeader className="px-4 pt-4 pb-2 shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <QrCode className="h-5 w-5" />
             Leitor de QR Code
@@ -219,7 +223,7 @@ export function QrScanner({ open, onOpenChange, onExpenseScanned }: QrScannerPro
         </DialogHeader>
 
         {/* Área da câmera */}
-        <div className="relative bg-black aspect-video w-full overflow-hidden">
+        <div className="relative bg-black w-full overflow-hidden flex-1 sm:aspect-video sm:flex-none">
           <video
             ref={videoRef}
             className="w-full h-full object-cover"
@@ -271,7 +275,7 @@ export function QrScanner({ open, onOpenChange, onExpenseScanned }: QrScannerPro
 
         {/* Resultado */}
         {result && (
-          <div className="px-4 py-4 space-y-3 border-t">
+          <div className="px-4 py-4 space-y-3 border-t shrink-0">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
               QR Code lido
             </p>

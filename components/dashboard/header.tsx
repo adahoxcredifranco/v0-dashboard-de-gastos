@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Download, Trash2, Wallet, QrCode } from "lucide-react";
+import { Download, Trash2, Wallet, QrCode, Menu, PlusCircle } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,6 +14,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { IncomeForm } from "./income-form";
 import { QrScanner } from "./qr-scanner";
 import { ExpenseForm } from "./expense-form";
@@ -37,6 +38,7 @@ export function DashboardHeader({ onExport, onClearAll, onAddIncome, onAddExpens
   const [qrOpen, setQrOpen] = useState(false);
   const [qrExpenseData, setQrExpenseData] = useState<{ name?: string; value?: number; period?: ExpensePeriod } | null>(null);
   const [expenseFormOpen, setExpenseFormOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <>
@@ -52,7 +54,94 @@ export function DashboardHeader({ onExport, onClearAll, onAddIncome, onAddExpens
             </div>
           </div>
           
-          <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap sm:justify-end">
+          {/* Mobile: menu sanduíche */}
+          <div className="flex items-center justify-end sm:hidden">
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon" aria-label="Abrir menu">
+                  <Menu className="h-4 w-4" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[320px] sm:max-w-sm">
+                <SheetHeader>
+                  <SheetTitle>Ações</SheetTitle>
+                </SheetHeader>
+                <div className="px-4 pb-4 flex flex-col gap-2">
+                  <Button
+                    variant="outline"
+                    className="justify-start gap-2"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setQrOpen(true);
+                    }}
+                  >
+                    <QrCode className="h-4 w-4" />
+                    QR Code
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    className="justify-start gap-2"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      onExport();
+                    }}
+                  >
+                    <Download className="h-4 w-4" />
+                    Exportar
+                  </Button>
+
+                  <IncomeForm
+                    onSubmit={onAddIncome}
+                    trigger={
+                      <Button
+                        variant="outline"
+                        className="justify-start gap-2 border-success text-success hover:bg-success hover:text-success-foreground"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <PlusCircle className="h-4 w-4" />
+                        Nova Entrada
+                      </Button>
+                    }
+                  />
+
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="destructive"
+                        className="justify-start gap-2"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Limpar Tudo
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Limpar todos os dados?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Esta ação irá remover permanentemente todas as despesas cadastradas.
+                          Recomendamos exportar seus dados antes de continuar.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={onClearAll}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Sim, limpar tudo
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+
+          {/* Desktop / tablet: botões visíveis */}
+          <div className="hidden sm:flex flex-wrap items-center gap-2 sm:flex-nowrap sm:justify-end">
             <Button
               variant="outline"
               size="icon"
