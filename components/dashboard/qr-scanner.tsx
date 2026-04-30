@@ -5,13 +5,21 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { QrCode, X, FlipHorizontal, Copy, Check } from "lucide-react";
 import jsQR from "jsqr";
+import { ExpensePeriod } from "@/lib/types";
+
+interface QrExpenseData {
+  name?: string;
+  value?: number;
+  period?: ExpensePeriod;
+}
 
 interface QrScannerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onExpenseScanned?: (data: QrExpenseData) => void;
 }
 
-export function QrScanner({ open, onOpenChange }: QrScannerProps) {
+export function QrScanner({ open, onOpenChange, onExpenseScanned }: QrScannerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -112,6 +120,23 @@ export function QrScanner({ open, onOpenChange }: QrScannerProps) {
     }
   }, [facingMode]);
 
+  // Tenta parsear o QR como dados de despesa (JSON)
+  const parseExpenseQr = (raw: string): QrExpenseData | null => {
+    try {
+      const parsed = JSON.parse(raw);
+      if (typeof parsed === "object" && parsed !== null && ("name" in parsed || "value" in parsed)) {
+        return {
+          name: typeof parsed.name === "string" ? parsed.name : undefined,
+          value: typeof parsed.value === "number" ? parsed.value : undefined,
+          period: parsed.period === "YEAR" ? ExpensePeriod.YEAR : ExpensePeriod.MONTH,
+        };
+      }
+    } catch {
+      // não é JSON — ignora
+    }
+    return null;
+  };
+
   const handleCopy = async () => {
     if (!result) return;
     await navigator.clipboard.writeText(result);
@@ -206,23 +231,40 @@ export function QrScanner({ open, onOpenChange }: QrScannerProps) {
             <div className="rounded-md bg-muted px-3 py-2 text-sm break-all font-mono">
               {result}
             </div>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" className="gap-2 flex-1" onClick={handleCopy}>
-                {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-                {copied ? "Copiado!" : "Copiar"}
-              </Button>
-              {isUrl(result) && (
-                <Button size="sm" className="flex-1" onClick={handleOpenLink}>
-                  Abrir link
+            <div className="flex flex-col gap-2">
+              {/* Botão principal: cadastrar como despesa */}
+              {(() => {
+                const expenseData = parseExpenseQr(result);
+                return (
+                  <Button
+                    className="w-full gap-2"
+                    onClick={() => {
+                      onExpenseScanned?.(expenseData ?? { name: result });
+                      onOpenChange(false);
+                    }}
+                  >
+                    Cadastrar como despesa
+                  </Button>
+                );
+              })()}
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" className="gap-2 flex-1" onClick={handleCopy}>
+                  {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                  {copied ? "Copiado!" : "Copiar"}
                 </Button>
-              )}
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => { setResult(null); startCamera(); }}
-              >
-                Escanear outro
-              </Button>
+                {isUrl(result) && (
+                  <Button size="sm" variant="outline" className="flex-1" onClick={handleOpenLink}>
+                    Abrir link
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => { setResult(null); startCamera(); }}
+                >
+                  Escanear outro
+                </Button>
+              </div>
             </div>
           </div>
         )}

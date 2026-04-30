@@ -87,11 +87,11 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardHeader onExport={exportData} onClearAll={clearAll} onAddIncome={addIncome} />
+      <DashboardHeader onExport={exportData} onClearAll={clearAll} onAddIncome={addIncome} onAddExpense={addExpense} />
       
       <main className="container mx-auto px-4 py-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">Dashboard</h2>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="text-2xl font-bold leading-tight">Dashboard</h2>
           <ExpenseForm onSubmit={addExpense} />
         </div>
 
@@ -104,7 +104,7 @@ export default function DashboardPage() {
         />
 
         <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList>
+          <TabsList className="w-full justify-start overflow-x-auto">
             <TabsTrigger value="overview">Visão Geral</TabsTrigger>
             <TabsTrigger value="expenses">Despesas</TabsTrigger>
             <TabsTrigger value="investment">Investimentos</TabsTrigger>

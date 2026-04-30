@@ -41,9 +41,11 @@ interface ExpenseFormProps {
   /** Pré-define e trava o mês/ano (usado ao adicionar pelo gráfico) */
   defaultMonth?: number;
   defaultYear?: number;
+  /** Pré-preenche campos via QR code */
+  defaultValues?: Partial<{ name: string; value: number; period: ExpensePeriod }>;
 }
 
-export function ExpenseForm({ onSubmit, editExpense, trigger, open: controlledOpen, onOpenChange, defaultMonth, defaultYear }: ExpenseFormProps) {
+export function ExpenseForm({ onSubmit, editExpense, trigger, open: controlledOpen, onOpenChange, defaultMonth, defaultYear, defaultValues }: ExpenseFormProps) {
   const isEditMode = !!editExpense;
   const isLockedMonth = defaultMonth !== undefined && defaultYear !== undefined;
   const [internalOpen, setInternalOpen] = useState(false);
@@ -51,9 +53,9 @@ export function ExpenseForm({ onSubmit, editExpense, trigger, open: controlledOp
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
   const setOpen = onOpenChange ?? setInternalOpen;
 
-  const [name, setName] = useState("");
-  const [value, setValue] = useState("");
-  const [period, setPeriod] = useState<ExpensePeriod>(ExpensePeriod.MONTH);
+  const [name, setName] = useState(defaultValues?.name ?? "");
+  const [value, setValue] = useState(defaultValues?.value?.toString() ?? "");
+  const [period, setPeriod] = useState<ExpensePeriod>(defaultValues?.period ?? ExpensePeriod.MONTH);
   const [month, setMonth] = useState((defaultMonth ?? new Date().getMonth() + 1).toString());
   const [year, setYear] = useState((defaultYear ?? new Date().getFullYear()).toString());
 
@@ -67,6 +69,10 @@ export function ExpenseForm({ onSubmit, editExpense, trigger, open: controlledOp
       setPeriod(editExpense.period);
       setMonth(editExpense.month.toString());
       setYear(editExpense.year.toString());
+    } else if (open && defaultValues) {
+      if (defaultValues.name !== undefined) setName(defaultValues.name);
+      if (defaultValues.value !== undefined) setValue(defaultValues.value.toString());
+      if (defaultValues.period !== undefined) setPeriod(defaultValues.period);
     } else if (open && isLockedMonth) {
       setMonth(defaultMonth!.toString());
       setYear(defaultYear!.toString());
@@ -74,9 +80,9 @@ export function ExpenseForm({ onSubmit, editExpense, trigger, open: controlledOp
   }, [open, editExpense]);
 
   const resetForm = () => {
-    setName("");
-    setValue("");
-    setPeriod(ExpensePeriod.MONTH);
+    setName(defaultValues?.name ?? "");
+    setValue(defaultValues?.value?.toString() ?? "");
+    setPeriod(defaultValues?.period ?? ExpensePeriod.MONTH);
     setMonth((defaultMonth ?? new Date().getMonth() + 1).toString());
     setYear((defaultYear ?? new Date().getFullYear()).toString());
   };
