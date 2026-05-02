@@ -88,7 +88,7 @@ export function QrScanner({ open, onOpenChange, onExpenseScanned }: QrScannerPro
 
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const code = jsQR(imageData.data, imageData.width, imageData.height, {
-      inversionAttempts: "dontInvert",
+      inversionAttempts: "attemptBoth",
     });
 
     if (code?.data) {
@@ -126,19 +126,38 @@ export function QrScanner({ open, onOpenChange, onExpenseScanned }: QrScannerPro
 
   // Tenta parsear o QR como dados de despesa (JSON)
   const parseExpenseQr = (raw: string): QrExpenseData | null => {
+    /** Valores em JSON / formulários (ex.: "1.234,56" ou número). */
     const parseNumber = (v: unknown): number | undefined => {
       if (typeof v === "number" && Number.isFinite(v)) return v;
       if (typeof v === "string") {
-        const cleaned = v
-          .trim()
-          .replace(/\s/g, "")
-          .replace(/[R$r$]/gi, "")
-          .replace(/\./g, "")
-          .replace(",", ".");
-        const n = Number(cleaned);
+        let t = v.trim().replace(/\s/g, "").replace(/[R$r$]/gi, "");
+        if (!t) return undefined;
+        const hasComma = t.includes(",");
+        const hasDot = t.includes(".");
+        if (hasComma && hasDot) {
+          t = t.replace(/\./g, "").replace(",", ".");
+        } else if (hasComma) {
+          t = t.replace(",", ".");
+        } else if (hasDot) {
+          const parts = t.split(".");
+          if (parts.length === 2 && parts[1].length <= 2) {
+            /* decimal estilo EMV / inglês: 12.50 */
+          } else {
+            t = t.replace(/\./g, "");
+          }
+        }
+        const n = Number(t);
         if (Number.isFinite(n)) return n;
       }
       return undefined;
+    };
+
+    /** Tag 54 PIX (EMV): ponto é sempre separador decimal; sem milhares. */
+    const parsePixAmount = (raw: string): number | undefined => {
+      const t = raw.trim().replace(",", ".");
+      if (!t) return undefined;
+      const n = Number(t);
+      return Number.isFinite(n) ? n : undefined;
     };
 
     const pickFirstString = (obj: Record<string, unknown>, keys: string[]): string | undefined => {
@@ -181,7 +200,7 @@ export function QrScanner({ open, onOpenChange, onExpenseScanned }: QrScannerPro
 
       const name = tlv.get("59")?.trim(); // Merchant Name
       const amountRaw = tlv.get("54")?.trim(); // Transaction Amount
-      const value = amountRaw ? parseNumber(amountRaw) : undefined;
+      const value = amountRaw ? parsePixAmount(amountRaw) : undefined;
 
       if (!name && value === undefined) return null;
       return { name, value, period: ExpensePeriod.MONTH };

@@ -69,10 +69,14 @@ export function ExpenseForm({ onSubmit, editExpense, trigger, open: controlledOp
       setPeriod(editExpense.period);
       setMonth(editExpense.month.toString());
       setYear(editExpense.year.toString());
-    } else if (open && defaultValues) {
-      if (defaultValues.name !== undefined) setName(defaultValues.name);
-      if (defaultValues.value !== undefined) setValue(defaultValues.value.toString());
-      if (defaultValues.period !== undefined) setPeriod(defaultValues.period);
+    } else if (open && defaultValues && !isEditMode) {
+      setName(defaultValues.name ?? "");
+      setValue(
+        defaultValues.value !== undefined && defaultValues.value !== null
+          ? String(defaultValues.value)
+          : "",
+      );
+      setPeriod(defaultValues.period ?? ExpensePeriod.MONTH);
     } else if (open && isLockedMonth) {
       setMonth(defaultMonth!.toString());
       setYear(defaultYear!.toString());
