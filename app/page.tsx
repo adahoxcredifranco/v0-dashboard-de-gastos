@@ -13,6 +13,7 @@ import { InvestmentCalculator } from "@/components/dashboard/investment-calculat
 import { NationalIndicators } from "@/components/dashboard/national-indicators";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Spinner } from "@/components/ui/spinner";
+import { isExpensePaid } from "@/lib/types";
 
 export default function DashboardPage() {
   const {
@@ -22,6 +23,7 @@ export default function DashboardPage() {
     addExpense,
     removeExpense,
     updateExpense,
+    setExpensePaidForMonth,
     addIncome,
     removeIncome,
     updateIncome,
@@ -29,6 +31,7 @@ export default function DashboardPage() {
     getIncomesForMonth,
     getMonthlySummary,
     exportData,
+    importData,
     clearAll,
   } = useExpenses();
 
@@ -53,14 +56,19 @@ export default function DashboardPage() {
   );
 
   const currentMonthTotal = useMemo(
-    () => currentMonthExpenses.reduce((sum, e) => sum + e.value, 0),
-    [currentMonthExpenses]
+    () => currentMonthExpenses
+      .filter((e) => isExpensePaid(e, currentYear, currentMonth))
+      .reduce((sum, e) => sum + e.value, 0),
+    [currentMonthExpenses, currentYear, currentMonth]
   );
 
-  const previousMonthTotal = useMemo(
-    () => previousMonthExpenses.reduce((sum, e) => sum + e.value, 0),
-    [previousMonthExpenses]
-  );
+  const previousMonthTotal = useMemo(() => {
+    const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+    const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+    return previousMonthExpenses
+      .filter((e) => isExpensePaid(e, prevYear, prevMonth))
+      .reduce((sum, e) => sum + e.value, 0);
+  }, [previousMonthExpenses, currentMonth, currentYear]);
 
   const currentMonthIncomes = useMemo(
     () => getIncomesForMonth(currentMonth, currentYear),
@@ -73,7 +81,12 @@ export default function DashboardPage() {
   );
 
   const yearTotal = useMemo(
-    () => monthlySummary.reduce((sum, m) => sum + m.total, 0),
+    () => monthlySummary.reduce((sum, m) => {
+      const paidTotal = m.expenses
+        .filter((e) => isExpensePaid(e, m.year, m.month))
+        .reduce((s, e) => s + e.value, 0);
+      return sum + paidTotal;
+    }, 0),
     [monthlySummary]
   );
 
@@ -87,7 +100,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardHeader onExport={exportData} onClearAll={clearAll} onAddIncome={addIncome} onAddExpense={addExpense} />
+      <DashboardHeader onExport={exportData} onImport={importData} onClearAll={clearAll} onAddIncome={addIncome} onAddExpense={addExpense} />
       
       <main className="container mx-auto px-4 py-6 space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -112,14 +125,12 @@ export default function DashboardPage() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <MonthlyChart data={monthlySummary} currentMonth={currentMonth} onAddExpense={addExpense} />
-              <ExpensePieChart
-                expenses={currentMonthExpenses}
-                month={currentMonth}
-                year={currentYear}
-              />
-            </div>
+            <MonthlyChart data={monthlySummary} currentMonth={currentMonth} onAddExpense={addExpense} onUpdateExpense={updateExpense} onSetExpensePaid={setExpensePaidForMonth} />
+            <ExpensePieChart
+              expenses={currentMonthExpenses}
+              month={currentMonth}
+              year={currentYear}
+            />
           </TabsContent>
 
           <TabsContent value="expenses" className="space-y-4">

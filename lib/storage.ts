@@ -73,6 +73,19 @@ class StorageService {
     return data.expenses[index];
   }
 
+  // Marcar/desmarcar despesa como paga em um mês específico
+  setExpensePaidForMonth(id: string, year: number, month: number, paid: boolean): Expense | null {
+    const data = this.getStorageData();
+    const index = data.expenses.findIndex((e) => e.id === id);
+    if (index === -1) return null;
+
+    const key = `${year}-${month}`;
+    const paidMonths = { ...(data.expenses[index].paidMonths ?? {}), [key]: paid };
+    data.expenses[index] = { ...data.expenses[index], paidMonths };
+    this.saveStorageData(data);
+    return data.expenses[index];
+  }
+
   // ==================== INCOMES ====================
 
   // Obter todas as entradas
@@ -177,21 +190,50 @@ class StorageService {
     return JSON.stringify(data, null, 2);
   }
 
-  // Importar dados de JSON
-  importFromJSON(jsonString: string): boolean {
+  // Importar dados de JSON (suporta formato antigo sem paidMonths)
+  importFromJSON(jsonString: string): { success: boolean; message: string } {
     try {
-      const data = JSON.parse(jsonString) as StorageData;
-      if (data.expenses && Array.isArray(data.expenses)) {
-        // Garante que incomes existe
-        if (!data.incomes) {
-          data.incomes = [];
-        }
-        this.saveStorageData(data);
-        return true;
+      const data = JSON.parse(jsonString) as Record<string, unknown>;
+
+      if (!data.expenses || !Array.isArray(data.expenses)) {
+        return { success: false, message: "Arquivo inválido: campo 'expenses' não encontrado." };
       }
-      return false;
+
+      // Normaliza despesas — formato antigo tem `paid?: boolean`, novo tem `paidMonths`
+      const expenses = (data.expenses as Record<string, unknown>[]).map((e) => {
+        const expense = { ...e } as Record<string, unknown>;
+        // Migra `paid` global para `paidMonths` se necessário
+        if (typeof expense.paid === "boolean" && !expense.paidMonths) {
+          if (expense.paid && typeof expense.month === "number" && typeof expense.year === "number") {
+            expense.paidMonths = { [`${expense.year}-${expense.month}`]: true };
+          }
+          delete expense.paid;
+        }
+        // Se não tiver categoria, define como "OTHER"
+        if (!expense.category) {
+          expense.category = "OTHER";
+        }
+        return expense;
+      });
+
+      const incomes = Array.isArray(data.incomes)
+        ? (data.incomes as Record<string, unknown>[]).map((i) => {
+            const income = { ...i } as Record<string, unknown>;
+            delete income.paid; // remove campo legado se existir
+            return income;
+          })
+        : [];
+
+      const normalized: StorageData = {
+        expenses: expenses as unknown as Expense[],
+        incomes: incomes as unknown as Income[],
+        version: (data.version as string) ?? "1.0.0",
+      };
+
+      this.saveStorageData(normalized);
+      return { success: true, message: `${expenses.length} despesa(s) e ${incomes.length} entrada(s) importadas.` };
     } catch {
-      return false;
+      return { success: false, message: "Erro ao ler o arquivo. Verifique se é um JSON válido." };
     }
   }
 

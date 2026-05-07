@@ -56,7 +56,7 @@ export function SummaryCards({
         <CardContent>
           <div className="text-2xl font-bold text-destructive">{formatCurrency(currentMonthTotal)}</div>
           <p className="text-xs text-muted-foreground">
-            Total de despesas
+            Somente despesas pagas
           </p>
         </CardContent>
       </Card>
@@ -71,7 +71,7 @@ export function SummaryCards({
             {isPositiveBalance ? "+" : ""}{formatCurrency(balance)}
           </div>
           <p className="text-xs text-muted-foreground">
-            {isPositiveBalance ? "Vai sobrar no final do mês" : "Faltando para fechar o mês"}
+            {isPositiveBalance ? "Saldo positivo (despesas pagas)" : "Saldo negativo (despesas pagas)"}
           </p>
         </CardContent>
       </Card>

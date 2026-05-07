@@ -47,6 +47,18 @@ export function useExpenses() {
     []
   );
 
+  // Marcar/desmarcar despesa como paga em um mês específico
+  const setExpensePaidForMonth = useCallback(
+    (id: string, year: number, month: number, paid: boolean) => {
+      const updated = storageService.setExpensePaidForMonth(id, year, month, paid);
+      if (updated) {
+        setExpenses((prev) => prev.map((e) => (e.id === id ? updated : e)));
+      }
+      return updated;
+    },
+    []
+  );
+
   // ==================== INCOMES ====================
 
   // Adicionar entrada
@@ -141,6 +153,17 @@ export function useExpenses() {
     return monthExpenses.reduce((sum, e) => sum + e.value, 0);
   }, [getExpensesForMonth]);
 
+  // Importar dados
+  const importData = useCallback((jsonString: string): { success: boolean; message: string } => {
+    const result = storageService.importFromJSON(jsonString);
+    if (result.success) {
+      // Recarrega estado do storage
+      setExpenses(storageService.getAllExpenses());
+      setIncomes(storageService.getAllIncomes());
+    }
+    return result;
+  }, []);
+
   // Exportar dados
   const exportData = useCallback(() => {
     const jsonData = storageService.exportToJSON();
@@ -169,6 +192,7 @@ export function useExpenses() {
     addExpense,
     removeExpense,
     updateExpense,
+    setExpensePaidForMonth,
     addIncome,
     removeIncome,
     updateIncome,
@@ -178,6 +202,7 @@ export function useExpenses() {
     getMonthlySummary,
     getCurrentMonthTotal,
     exportData,
+    importData,
     clearAll,
   };
 }

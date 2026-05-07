@@ -47,9 +47,11 @@ interface MonthlyChartProps {
     month: number;
     year: number;
   }) => void;
+  onUpdateExpense?: (id: string, updates: Partial<Omit<Expense, "id" | "createdAt">>) => void;
+  onSetExpensePaid?: (id: string, year: number, month: number, paid: boolean) => void;
 }
 
-export function MonthlyChart({ data, currentMonth, onAddExpense }: MonthlyChartProps) {
+export function MonthlyChart({ data, currentMonth, onAddExpense, onUpdateExpense, onSetExpensePaid }: MonthlyChartProps) {
   const [selectedMonth, setSelectedMonth] = useState<{
     month: number;
     year: number;
@@ -285,6 +287,8 @@ export function MonthlyChart({ data, currentMonth, onAddExpense }: MonthlyChartP
           month={selectedMonth.month}
           year={selectedMonth.year}
           expenses={selectedMonth.expenses}
+          onUpdateExpense={onUpdateExpense}
+          onSetExpensePaid={onSetExpensePaid}
         />
       )}
 

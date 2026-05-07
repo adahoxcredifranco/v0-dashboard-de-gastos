@@ -22,12 +22,20 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
-import { Expense, ExpensePeriod, MONTHS_PT } from "@/lib/types";
+import {
+  Expense,
+  ExpenseCategory,
+  ExpensePeriod,
+  EXPENSE_CATEGORY_ICONS,
+  EXPENSE_CATEGORY_LABELS,
+  MONTHS_PT,
+} from "@/lib/types";
 
 type ExpensePayload = {
   name: string;
   value: number;
   period: ExpensePeriod;
+  category?: ExpenseCategory;
   month: number;
   year: number;
 };
@@ -42,10 +50,19 @@ interface ExpenseFormProps {
   defaultMonth?: number;
   defaultYear?: number;
   /** Pré-preenche campos via QR code */
-  defaultValues?: Partial<{ name: string; value: number; period: ExpensePeriod }>;
+  defaultValues?: Partial<{ name: string; value: number; period: ExpensePeriod; category: ExpenseCategory }>;
 }
 
-export function ExpenseForm({ onSubmit, editExpense, trigger, open: controlledOpen, onOpenChange, defaultMonth, defaultYear, defaultValues }: ExpenseFormProps) {
+export function ExpenseForm({
+  onSubmit,
+  editExpense,
+  trigger,
+  open: controlledOpen,
+  onOpenChange,
+  defaultMonth,
+  defaultYear,
+  defaultValues,
+}: ExpenseFormProps) {
   const isEditMode = !!editExpense;
   const isLockedMonth = defaultMonth !== undefined && defaultYear !== undefined;
   const [internalOpen, setInternalOpen] = useState(false);
@@ -56,6 +73,7 @@ export function ExpenseForm({ onSubmit, editExpense, trigger, open: controlledOp
   const [name, setName] = useState(defaultValues?.name ?? "");
   const [value, setValue] = useState(defaultValues?.value?.toString() ?? "");
   const [period, setPeriod] = useState<ExpensePeriod>(defaultValues?.period ?? ExpensePeriod.MONTH);
+  const [category, setCategory] = useState<ExpenseCategory | "">(defaultValues?.category ?? "");
   const [month, setMonth] = useState((defaultMonth ?? new Date().getMonth() + 1).toString());
   const [year, setYear] = useState((defaultYear ?? new Date().getFullYear()).toString());
 
@@ -67,6 +85,7 @@ export function ExpenseForm({ onSubmit, editExpense, trigger, open: controlledOp
       setName(editExpense.name);
       setValue(editExpense.value.toString());
       setPeriod(editExpense.period);
+      setCategory(editExpense.category ?? "");
       setMonth(editExpense.month.toString());
       setYear(editExpense.year.toString());
     } else if (open && defaultValues && !isEditMode) {
@@ -77,6 +96,7 @@ export function ExpenseForm({ onSubmit, editExpense, trigger, open: controlledOp
           : "",
       );
       setPeriod(defaultValues.period ?? ExpensePeriod.MONTH);
+      setCategory(defaultValues.category ?? "");
     } else if (open && isLockedMonth) {
       setMonth(defaultMonth!.toString());
       setYear(defaultYear!.toString());
@@ -87,6 +107,7 @@ export function ExpenseForm({ onSubmit, editExpense, trigger, open: controlledOp
     setName(defaultValues?.name ?? "");
     setValue(defaultValues?.value?.toString() ?? "");
     setPeriod(defaultValues?.period ?? ExpensePeriod.MONTH);
+    setCategory(defaultValues?.category ?? "");
     setMonth((defaultMonth ?? new Date().getMonth() + 1).toString());
     setYear((defaultYear ?? new Date().getFullYear()).toString());
   };
@@ -99,6 +120,7 @@ export function ExpenseForm({ onSubmit, editExpense, trigger, open: controlledOp
       name: name.trim(),
       value: parseFloat(value),
       period,
+      category: category !== "" ? category : undefined,
       month: parseInt(month),
       year: parseInt(year),
     });
@@ -150,6 +172,28 @@ export function ExpenseForm({ onSubmit, editExpense, trigger, open: controlledOp
               onChange={(e) => setValue(e.target.value)}
               required
             />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="category">Categoria</Label>
+            <Select
+              value={category}
+              onValueChange={(v) => setCategory(v as ExpenseCategory)}
+            >
+              <SelectTrigger id="category">
+                <SelectValue placeholder="Selecione uma categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.values(ExpenseCategory).map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    <span className="flex items-center gap-2">
+                      <span>{EXPENSE_CATEGORY_ICONS[cat]}</span>
+                      <span>{EXPENSE_CATEGORY_LABELS[cat]}</span>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid gap-2">

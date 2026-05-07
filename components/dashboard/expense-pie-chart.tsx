@@ -12,18 +12,26 @@ interface ExpensePieChartProps {
 }
 
 const COLORS = [
-  "#3b82f6", // blue
-  "#f97316", // orange
-  "#22c55e", // green
-  "#a855f7", // purple
-  "#ef4444", // red
-  "#eab308", // yellow
-  "#06b6d4", // cyan
-  "#ec4899", // pink
-  "#14b8a6", // teal
-  "#f59e0b", // amber
-  "#6366f1", // indigo
-  "#84cc16", // lime
+  // Blues
+  "#1d4ed8", "#3b82f6", "#60a5fa", "#93c5fd",
+  // Oranges & Reds
+  "#c2410c", "#f97316", "#fb923c", "#ef4444", "#dc2626", "#fca5a5",
+  // Greens
+  "#15803d", "#22c55e", "#4ade80", "#86efac", "#84cc16", "#bef264",
+  // Purples & Pinks
+  "#7e22ce", "#a855f7", "#c084fc", "#ec4899", "#f472b6", "#db2777",
+  // Yellows & Ambers
+  "#b45309", "#f59e0b", "#fbbf24", "#fde047", "#eab308",
+  // Cyans & Teals
+  "#0e7490", "#06b6d4", "#22d3ee", "#14b8a6", "#2dd4bf", "#0d9488",
+  // Indigos & Violets
+  "#4338ca", "#6366f1", "#818cf8", "#7c3aed", "#8b5cf6",
+  // Rose & Fuchsia
+  "#be123c", "#fb7185", "#e11d48", "#d946ef", "#e879f9", "#a21caf",
+  // Lime & Emerald
+  "#4d7c0f", "#65a30d", "#16a34a", "#059669",
+  // Slate & Zinc accents
+  "#0f766e", "#0369a1", "#7c2d12", "#713f12",
 ];
 
 export function ExpensePieChart({ expenses, month, year }: ExpensePieChartProps) {
@@ -56,15 +64,15 @@ export function ExpensePieChart({ expenses, month, year }: ExpensePieChartProps)
         <CardDescription>{MONTHS_PT[month - 1]} de {year}</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="h-[300px]">
+        <div className="h-[500px]">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={pieData}
                 cx="50%"
                 cy="50%"
-                innerRadius={60}
-                outerRadius={100}
+                innerRadius={80}
+                outerRadius={160}
                 paddingAngle={2}
                 dataKey="value"
                 label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
